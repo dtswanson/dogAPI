@@ -6,23 +6,71 @@
     <title>Swanson's Dog API Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <style>
+        body {
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            color: #343a40;
+            margin-bottom: 30px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+        .api-details, .fact-content, .image-content {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: #ffffff;
+        }
+        .image-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+    </style>
 </head>
-<body style="padding: 20px; text-align: center;">
+<body>
     <h1>Swanson's Dog API Demo</h1>
     <button class="btn btn-primary get-dog">Fetch a Dog Image</button>
-    <div class="api-details" style="margin-top: 20px;"></div>
-    <div class="image-content" style="margin-top: 20px;"></div>
+    <div class="fact-content"></div>
+    <div class="image-content"></div>
+    <div class="api-details"></div>
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous" type="text/javascript"></script>
     <script type="text/javascript">
-        function getDog(){
-            $.getJSON("https://dog.ceo/api/breeds/image/random", function(data) {
+        function getDog() {
+            return $.getJSON("https://dog.ceo/api/breeds/image/random").then(function(data) {
                 $(".api-details").html("<p>API Response: " + JSON.stringify(data) + "</p>");
-                $(".image-content").html("<img src='" + data.message + "' style='max-width: 100%; height: auto;'>");
+                $(".image-content").html("<img src='" + data.message + "'>");
             });
         }
-        $('.get-dog').click(function(){
-            getDog();
+
+        function getDogFact() {
+            return $.getJSON("https://dog-api.kinduff.com/api/facts")
+                .done(function(data) {
+                    if (data && data.facts && data.facts.length > 0) {
+                        $(".fact-content").html("<p><b>Dog Fact:</b> " + data.facts[0] + "</p>");
+                    } else {
+                        $(".fact-content").html("<p>No dog facts available at the moment.</p>");
+                    }
+                });
+        }
+
+        $('.get-dog').click(function() {
+            $.when(getDog(), getDogFact()).done(function() {
+                console.log("Both API calls completed.");
+            });
         });
     </script>
 </body>
