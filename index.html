@@ -2,83 +2,113 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Swanson's Dog API Demo</title>
+    <title>API Demo: Asynchronous Data</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding: 20px; text-align: center; background-color: #f8f9fa; font-family: Arial, sans-serif; }
-        h1 { color: #343a40; margin-bottom: 30px; }
-        .api-container { max-width: 600px; margin: 0 auto; }
-        .btn-primary { background-color: #007bff; border-color: #007bff; padding: 10px 25px; font-size: 18px; }
-        .api-details, .fact-content, .image-content { 
-            margin-top: 20px; padding: 15px; border: 1px solid #dee2e6; 
-            border-radius: 5px; background-color: #ffffff; min-height: 50px;
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px 20px; }
+        .demo-card { background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; max-width: 700px; margin: 0 auto; }
+        h1 { font-weight: 700; color: #1a1a1b; margin-top: 0; }
+        
+        /* Image Styling */
+        .image-container { 
+            background: #e9ecef; border-radius: 8px; overflow: hidden; 
+            margin: 20px 0; min-height: 350px; display: flex; align-items: center; justify-content: center;
         }
-        .image-content img { max-width: 100%; height: 300px; object-fit: cover; border-radius: 5px; }
-        .label-debug { font-weight: bold; color: #777; display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 10px; }
+        .image-container img { width: 100%; height: 400px; object-fit: cover; }
+        
+        /* Fact Styling */
+        .fact-box { 
+            background: #fff8e1; border-left: 5px solid #ffc107; 
+            padding: 15px; font-size: 1.1em; margin-bottom: 20px; min-height: 60px;
+        }
+        
+        /* Debugger Styling */
+        .debug-panel { 
+            background: #272822; color: #f8f8f2; padding: 15px; 
+            border-radius: 5px; font-family: monospace; font-size: 12px; text-align: left; overflow-x: auto;
+        }
+        .status-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; margin-bottom: 10px; }
+        .status-success { background: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
 
-    <div class="api-container">
-        <h1>Swanson's Dog API Demo</h1>
-        <button class="btn btn-primary get-dog">Fetch a New Dog!</button>
+<div class="demo-card text-center">
+    <h1>Dog API Explorer</h1>
+    <p class="text-muted">Demonstrating multiple concurrent AJAX requests</p>
+    
+    <button class="btn btn-primary btn-lg get-dog" id="fetchBtn">
+        <span class="glyphicon glyphicon-refresh"></span> Fetch New Data
+    </button>
 
-        <div class="fact-content">
-            <p>Click the button to learn something about dogs!</p>
-        </div>
-
-        <div class="image-content">
-            <p>Waiting for a dog image...</p>
-        </div>
-
-        <div class="api-details">
-            <span class="label-debug">Raw API Debugger</span>
-            <code id="debug-text" style="word-break: break-all;">No data fetched yet.</code>
-        </div>
+    <div class="image-container" id="imgBox">
+        <p class="text-muted">Dog image will appear here</p>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script type="text/javascript">
+    <div class="fact-box text-left" id="factBox">
+        Click the button to fetch a random fact!
+    </div>
+
+    <div class="text-left">
+        <span class="status-tag status-success" id="status">Ready</span>
+        <div class="debug-panel">
+            <div style="color: #66d9ef;">// Raw JSON Response Header</div>
+            <span id="debug-text">Waiting for request...</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+    function updateUI(message, isError = false) {
+        const status = $('#status');
+        status.text(message);
+        status.css('background', isError ? '#f8d7da' : '#d4edda');
+        status.css('color', isError ? '#721c24' : '#155724');
+    }
+
+    function fetchData() {
+        // UI Reset
+        $('#fetchBtn').prop('disabled', true).text('Loading...');
+        $('#debug-text').text('Fetching from servers...');
+        updateUI('Processing...');
+
+        // Call 1: Dog CEO (Images)
+        const dogRequest = $.getJSON("https://dog.ceo/api/breeds/image/random");
         
-        function getDog() {
-            // Dog CEO API - Returns a random image URL
-            return $.getJSON("https://dog.ceo/api/breeds/image/random").then(function(data) {
-                $(".image-content").html("<img src='" + data.message + "' alt='Random Dog'>");
-                return data; // Pass data along
-            });
-        }
+        // Call 2: MeowFacts (Stable, supports CORS, great for demos)
+        const factRequest = $.getJSON("https://meowfacts.herokuapp.com/");
 
-        function getDogFact() {
-            // Dog API v2 - Returns an array of fact objects
-            return $.getJSON("https://dogapi.dog/api/v2/facts").done(function(data) {
-                // The fix: Accessing the nested data structure
-                // Path: data -> data (array) -> [0] -> attributes -> body
-                if (data && data.data && data.data.length > 0) {
-                    var fact = data.data[0].attributes.body;
-                    $(".fact-content").html("<b>Dog Fact:</b> " + fact);
-                } else {
-                    $(".fact-content").html("No dog facts available.");
-                }
-            });
-        }
+        // Use $.when to manage multiple asynchronous streams
+        $.when(dogRequest, factRequest)
+            .done(function(dogData, factData) {
+                // dogData and factData are arrays: [data, status, jqXHR]
+                
+                // Update Image
+                const imgUrl = dogData[0].message;
+                $('#imgBox').html(`<img src="${imgUrl}" class="img-responsive">`);
 
-        $('.get-dog').click(function() {
-            // UI Feedback
-            $(".get-dog").text("Loading...").prop("disabled", true);
-            $("#debug-text").text("Fetching data...");
+                // Update Fact (Path: data.data[0])
+                const factText = factData[0].data[0];
+                $('#factBox').html(`<strong>Fact:</strong> ${factText}`);
 
-            // Execute both calls
-            $.when(getDog(), getDogFact()).done(function(dogData, factData) {
-                // Update Debug window with the first API's response
-                $("#debug-text").text(JSON.stringify(dogData[0]));
+                // Update Debugger
+                $('#debug-text').text(JSON.stringify(dogData[0], null, 2));
+                updateUI('Fetch Successful');
+            })
+            .fail(function() {
+                updateUI('API Error!', true);
+                $('#factBox').text('Failed to load data from one of the sources.');
             })
             .always(function() {
-                // Reset Button
-                $(".get-dog").text("Fetch a New Dog!").prop("disabled", false);
+                $('#fetchBtn').prop('disabled', false).html('<span class="glyphicon glyphicon-refresh"></span> Fetch New Data');
             });
-        });
-    </script>
+    }
+
+    $('#fetchBtn').on('click', fetchData);
+</script>
+
 </body>
 </html>
