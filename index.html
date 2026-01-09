@@ -57,7 +57,7 @@
         }
 
         function getDogFact() {
-            return $.getJSON("https://dog-api.kinduff.com/api/facts")
+            return $.getJSON("https://dogapi.dog/api/v2/facts?limit=1")
                 .done(function(data) {
                     if (data && data.facts && data.facts.length > 0) {
                         $(".fact-content").html("<p><b>Dog Fact:</b> " + data.facts[0] + "</p>");
